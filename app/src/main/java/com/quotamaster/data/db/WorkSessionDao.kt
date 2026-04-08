@@ -46,4 +46,12 @@ interface WorkSessionDao {
     /** One-shot count for background workers (not Flow). */
     @Query("SELECT COUNT(*) FROM work_sessions WHERE date = :date")
     suspend fun getSessionCountForDate(date: String): Int
+
+    /** One-shot: all sessions for backup. */
+    @Query("SELECT * FROM work_sessions ORDER BY id ASC")
+    suspend fun getAllSessionsOnce(): List<WorkSession>
+
+    @Query("DELETE FROM work_sessions")
+    suspend fun deleteAll()
+
 }
