@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -86,7 +87,8 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     viewModel: HomeViewModel,
     onActivityClick: (Long) -> Unit,
-    onCreateClick: () -> Unit
+    onCreateClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     val cards by viewModel.displayCards.collectAsState()
     val quickLog by viewModel.quickLogState.collectAsState()
@@ -167,6 +169,9 @@ fun HomeScreen(
                     }
                     IconButton(onClick = { viewModel.toggleSortMode() }) {
                         Icon(Icons.Default.SwapVert, contentDescription = sortDesc)
+                    }
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Default.Settings, contentDescription = null)
                     }
                 }
             )

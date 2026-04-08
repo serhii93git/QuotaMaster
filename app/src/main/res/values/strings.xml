@@ -136,4 +136,20 @@
     <string name="content_desc_export">Export</string>
     <string name="export_share_title">Export sessions</string>
     <string name="export_empty">No sessions to export</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminder_toggle">Daily reminder</string>
+    <string name="settings_reminder_hour">Remind at</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_export_backup">Export Backup</string>
+    <string name="settings_import_backup">Import Backup</string>
+    <string name="settings_import_confirm_title">Replace all data?</string>
+    <string name="settings_import_confirm_message">This will delete all current activities and sessions and replace them with the backup. This cannot be undone.</string>
+    <string name="settings_import_confirm_yes">Replace</string>
 </resources>
