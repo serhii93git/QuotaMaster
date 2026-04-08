@@ -1,63 +1,53 @@
 package com.quotamaster.util
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.quotamaster.MainActivity
 import com.quotamaster.R
 
+/**
+ * Centralised notification helper.
+ * Creates channels lazily on first use.
+ */
 object NotificationHelper {
 
-    private const val CHANNEL_ID = "recording"
-    private const val NOTIFICATION_ID = 1
+    private const val CHANNEL_REMINDER   = "reminder_channel"
+    private const val NOTIFICATION_ID_REMINDER = 2001
 
-    fun createChannel(context: Context) {
+    fun showReminderNotification(context: Context) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // Create channel (idempotent)
         val channel = NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.notification_channel_name),
-            NotificationManager.IMPORTANCE_LOW
+            CHANNEL_REMINDER,
+            context.getString(R.string.notification_channel_reminder),
+            NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = context.getString(R.string.notification_channel_desc)
+            description = context.getString(R.string.notification_channel_reminder_desc)
         }
-        val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
-    }
-
-    fun showRecording(context: Context, activityName: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-            ) return
-        }
 
         val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pending = PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivity(
             context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, CHANNEL_REMINDER)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(context.getString(R.string.notification_recording_title))
-            .setContentText(activityName)
-            .setOngoing(true)
-            .setContentIntent(pending)
+            .setContentTitle(context.getString(R.string.reminder_notification_title))
+            .setContentText(context.getString(R.string.reminder_notification_text))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
             .build()
 
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.notify(NOTIFICATION_ID, notification)
-    }
-
-    fun cancelRecording(context: Context) {
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.cancel(NOTIFICATION_ID)
+        manager.notify(NOTIFICATION_ID_REMINDER, notification)
     }
 }
