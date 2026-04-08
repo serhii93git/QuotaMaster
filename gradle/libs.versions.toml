@@ -11,6 +11,7 @@ composeBom       = "2024.06.00"
 room             = "2.6.1"
 navigationCompose= "2.7.7"
 coroutines       = "1.8.1"
+datastorePrefs   = "1.1.1"
 
 [libraries]
 androidx-core-ktx                  = { group = "androidx.core",            name = "core-ktx",                      version.ref = "coreKtx"          }
