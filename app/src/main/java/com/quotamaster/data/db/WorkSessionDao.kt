@@ -43,6 +43,7 @@ interface WorkSessionDao {
     @Delete
     suspend fun delete(session: WorkSession)
 
-    @Query("SELECT * FROM work_sessions ORDER BY date DESC, start_time DESC")
-    suspend fun getAllSessionsOnce(): List<WorkSession>
+    /** One-shot count for background workers (not Flow). */
+    @Query("SELECT COUNT(*) FROM work_sessions WHERE date = :date")
+    suspend fun getSessionCountForDate(date: String): Int
 }
