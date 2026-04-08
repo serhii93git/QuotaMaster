@@ -4,6 +4,7 @@ import android.content.Context
 import com.quotamaster.data.db.AppDatabase
 import com.quotamaster.data.repository.ActivityRepository
 import com.quotamaster.data.repository.QuickLogRepository
+import com.quotamaster.data.repository.SettingsRepository
 import com.quotamaster.data.repository.WorkSessionRepository
 import com.quotamaster.viewmodel.ActivityDetailViewModel
 import com.quotamaster.viewmodel.HomeViewModel
@@ -17,6 +18,7 @@ class AppContainer(context: Context) {
     val activityRepository         = ActivityRepository(database.activityDao())
     val sessionRepository          = WorkSessionRepository(database.workSessionDao())
     val quickLogRepository         = QuickLogRepository(context)
+    val settingsRepository         = SettingsRepository(context)
 
     val homeViewModelFactory: HomeViewModel.Factory =
         HomeViewModel.Factory(activityRepository, sessionRepository, quickLogRepository)
