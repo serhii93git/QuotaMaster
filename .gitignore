@@ -1,0 +1,55 @@
+# --- Артефакти збірки та системні файли ---
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# --- Gradle та вихідні дані ---
+/build/
+/*/build/
+*.apk
+*.aar
+*.ap_
+*.dex
+
+# --- Kotlin ---
+/bin/
+*.kotlinc
+
+# --- Android Studio / IntelliJ IDEA ---
+# (Залишаємо деякі файли з .idea для збереження стилю коду проєкту, якщо потрібно)
+.idea/
+*.iws
+*.out
+
+# --- Log файли ---
+*.log
+
+# --- Тестування та звіти ---
+/test-results/
+/ajcore.*
+
+# --- Специфічні для macOS/Windows ---
+Thumbs.db
+.DS_Store
+
+# --- Keystores (Вкрай важливо для безпеки!) ---
+*.jks
+*.keystore
+*.p12
+google-services.json
+
+# --- Локальні змінні середовища ---
+.env
+

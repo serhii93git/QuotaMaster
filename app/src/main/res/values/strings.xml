@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QuotaMaster</string>
+
+    <!-- Periods -->
+    <string name="period_daily">Daily</string>
+    <string name="period_weekly">Weekly</string>
+    <string name="period_monthly">Monthly</string>
+    <string name="period_yearly">Yearly</string>
+
+    <!-- Home -->
+    <string name="home_empty">No activities yet — create your first one!</string>
+    <string name="btn_create_activity">New Activity</string>
+    <string name="label_hours_short">h</string>
+    <string name="label_days_short">days</string>
+    <string name="label_days_left">days left</string>
+    <string name="status_on_track">On Track</string>
+    <string name="status_behind">Behind</string>
+    <string name="status_completed">Completed</string>
+
+    <!-- Detail -->
+    <string name="label_hours">Hours</string>
+    <string name="label_days">Days</string>
+    <string name="label_unique_days">Unique Days</string>
+    <string name="label_sessions">Sessions</string>
+    <string name="coach_title">Friendly Coach</string>
+    <string name="btn_log_session">Log Session</string>
+    <string name="label_streak">Streak</string>
+    <string name="label_avg_duration">Avg Duration</string>
+    <string name="label_days_until_end">Days until end</string>
+    <string name="label_min_short">min</string>
+
+    <!-- Session Logger -->
+    <string name="log_session_title">Log Session</string>
+    <string name="label_date">Date (YYYY-MM-DD)</string>
+    <string name="label_start_time">Start Time (HH:MM)</string>
+    <string name="label_end_time">End Time (HH:MM)</string>
+    <string name="label_note">Note (optional)</string>
+    <string name="label_duration_prefix">Duration:</string>
+    <string name="error_invalid_date">Enter a valid date: YYYY-MM-DD</string>
+    <string name="error_invalid_time">Enter a valid time: HH:MM</string>
+
+    <!-- Create / Edit Activity -->
+    <string name="create_activity_title">New Activity</string>
+    <string name="edit_activity_title">Edit Activity</string>
+    <string name="label_activity_name">Activity Name</string>
+    <string name="label_activity_type">Type</string>
+    <string name="type_deadline">With Deadline</string>
+    <string name="type_ongoing">Ongoing</string>
+    <string name="label_period">Period</string>
+    <string name="label_goal_hours">Goal Hours per Period</string>
+    <string name="label_goal_days">Goal Days per Period</string>
+    <string name="label_start_date">Start Date (YYYY-MM-DD)</string>
+    <string name="label_end_date">End Date (YYYY-MM-DD)</string>
+    <string name="label_icon">Icon</string>
+    <string name="label_color">Color</string>
+    <string name="error_name_required">Name is required</string>
+
+    <!-- History -->
+    <string name="session_deleted">Session deleted</string>
+    <string name="undo">Undo</string>
+    <string name="label_arrow">\u2192</string>
+
+    <!-- Buttons -->
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
+
+    <!-- Content descriptions -->
+    <string name="content_desc_back">Back</string>
+    <string name="content_desc_delete">Delete</string>
+    <string name="content_desc_edit">Edit</string>
+
+    <!-- Home -->
+    <string name="quick_log_since">REC %1$s</string>
+    <string name="quick_log_started">Recording started</string>
+    <string name="quick_log_stopped">Session saved</string>
+    <string name="quick_log_conflict_title">Timer active</string>
+    <string name="quick_log_conflict_message">Stop recording "%1$s" and start new?</string>
+    <string name="quick_log_conflict_yes">Switch</string>
+
+    <!-- Goals -->
+    <string name="label_goal_weeks">Goal Weeks per Period</string>
+    <string name="label_goal_months">Goal Months per Period</string>
+    <string name="error_no_goal">Set at least one goal</string>
+
+    <!-- Detail -->
+    <string name="label_weeks">Weeks</string>
+    <string name="label_months">Months</string>
+
+    <!-- Home cards -->
+    <string name="label_weeks_short">wk</string>
+    <string name="label_months_short">mo</string>
+
+    <!-- Quick log -->
+    <string name="quick_log_instant">Day logged!</string>
+
+    <!-- Pickers -->
+    <string name="btn_select">Select</string>
+
+    <!-- Sort -->
+    <string name="sort_manual">Manual order</string>
+    <string name="sort_by_status">Sort by status</string>
+    <string name="content_desc_sort">Sort</string>
+
+    <!-- Overflow menu -->
+    <string name="content_desc_more">More options</string>
+    <string name="menu_archive">Archive</string>
+    <string name="menu_delete">Delete</string>
+    <string name="confirm_delete_title">Delete activity?</string>
+    <string name="confirm_delete_message">"%1$s" and all its sessions will be permanently deleted.</string>
+    <string name="btn_delete">Delete</string>
+
+    <!-- Drag -->
+    <string name="content_desc_drag">Reorder</string>
+
+    <!-- Edit session -->
+    <string name="edit_session_title">Edit Session</string>
+    <string name="detail_empty_title">No sessions yet</string>
+    <string name="detail_empty_subtitle">Tap "Log Session" to start tracking</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Recording</string>
+    <string name="notification_channel_desc">Shows when a session is being recorded</string>
+    <string name="notification_recording_title">Recording session</string>
+
+    <!-- Export -->
+    <string name="content_desc_export">Export</string>
+    <string name="export_share_title">Export sessions</string>
+    <string name="export_empty">No sessions to export</string>
+</resources>
