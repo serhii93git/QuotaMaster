@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.quotamaster.data.repository.ThemeMode
 
 private val DarkColors = darkColorScheme(
     primary   = Purple80,
@@ -29,10 +30,16 @@ private val LightColors = lightColorScheme(
 
 @Composable
 fun QuotaMasterTheme(
-    darkTheme: Boolean    = isSystemInDarkTheme(),
+    themeMode: ThemeMode  = ThemeMode.SYSTEM,
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.DARK  -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val ctx = LocalContext.current
