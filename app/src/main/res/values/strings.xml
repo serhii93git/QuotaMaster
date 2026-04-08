@@ -127,6 +127,10 @@
     <string name="reminder_notification_title">Don\'t forget to log!</string>
     <string name="reminder_notification_text">You haven\'t logged any sessions today. Keep your streak going!</string>
 
+    <!-- Backup -->
+    <string name="backup_export_success">Backup exported: %1$d activities, %2$d sessions</string>
+    <string name="backup_import_success">Restored: %1$d activities, %2$d sessions</string>
+    <string name="backup_import_error">Import failed: invalid backup file</string>
 
     <!-- Export -->
     <string name="content_desc_export">Export</string>
