@@ -1,3 +1,5 @@
+package com.quotamaster.util
+
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
