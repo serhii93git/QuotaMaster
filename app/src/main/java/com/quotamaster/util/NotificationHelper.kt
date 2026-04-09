@@ -8,17 +8,26 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.quotamaster.MainActivity
 import com.quotamaster.R
+import com.quotamaster.receiver.StopTimerReceiver
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * Centralised notification helper.
- * Creates channels on app start, shows/cancels notifications.
+ * - Recording channel: ongoing notification with chronometer + Stop action
+ * - Reminder channel: daily reminder if no sessions logged
  */
 object NotificationHelper {
 
-    private const val CHANNEL_RECORDING        = "recording_channel"
-    private const val CHANNEL_REMINDER         = "reminder_channel"
+    private const val CHANNEL_RECORDING         = "recording_channel"
+    private const val CHANNEL_REMINDER          = "reminder_channel"
     private const val NOTIFICATION_ID_RECORDING = 1001
     private const val NOTIFICATION_ID_REMINDER  = 2001
+
+    private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
+    private val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     /**
      * Creates all notification channels. Call once from Application.onCreate().
@@ -45,16 +54,58 @@ object NotificationHelper {
         manager.createNotificationChannels(listOf(recording, reminder))
     }
 
-    // ── Recording notification ───────────────────────────────────────
+    // ── Recording notification with chronometer + Stop ───────────
 
-    fun showRecording(context: Context, activityName: String) {
+    fun showRecording(context: Context, activityName: String, date: String, startTime: String) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val tapIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
+        val tapPending = PendingIntent.getActivity(
+            context, 0, tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val stopIntent = Intent(context, StopTimerReceiver::class.java)
+        val stopPending = PendingIntent.getBroadcast(
+            context, 0, stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Parse date+startTime to epoch millis for chronometer
+        val startMillis = parseToEpochMillis(date, startTime)
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_RECORDING)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(context.getString(R.string.notification_recording_title))
+            .setContentText(activityName)
+            .setOngoing(true)
+            .setUsesChronometer(true)
+            .setWhen(startMillis)
+            .setContentIntent(tapPending)
+            .addAction(0, context.getString(R.string.notification_stop), stopPending)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        manager.notify(NOTIFICATION_ID_RECORDING, notification)
+    }
+
+    fun showRecording(context: Context, activityName: String) {
+        // Fallback without chronometer (for resume on app restart)
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val tapIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val tapPending = PendingIntent.getActivity(
+            context, 0, tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val stopIntent = Intent(context, StopTimerReceiver::class.java)
+        val stopPending = PendingIntent.getBroadcast(
+            context, 0, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -63,7 +114,8 @@ object NotificationHelper {
             .setContentTitle(context.getString(R.string.notification_recording_title))
             .setContentText(activityName)
             .setOngoing(true)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(tapPending)
+            .addAction(0, context.getString(R.string.notification_stop), stopPending)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
@@ -75,7 +127,7 @@ object NotificationHelper {
         manager.cancel(NOTIFICATION_ID_RECORDING)
     }
 
-    // ── Reminder notification ────────────────────────────────────────
+    // ── Reminder notification ────────────────────────────────────
 
     fun showReminderNotification(context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -98,5 +150,20 @@ object NotificationHelper {
             .build()
 
         manager.notify(NOTIFICATION_ID_REMINDER, notification)
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────
+
+    private fun parseToEpochMillis(date: String, time: String): Long {
+        return try {
+            val localDate = LocalDate.parse(date, dateFmt)
+            val localTime = LocalTime.parse(time, timeFmt)
+            localDate.atTime(localTime)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        } catch (e: Exception) {
+            System.currentTimeMillis()
+        }
     }
 }
