@@ -4,7 +4,12 @@ package com.quotamaster.ui.home
 
 import android.content.Intent
 import android.view.HapticFeedbackConstants
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -487,13 +492,13 @@ private fun ActivityCard(
 
 @Composable
 private fun RecordingIndicator() {
-    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "rec")
+    val infiniteTransition = rememberInfiniteTransition(label = "rec")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue  = 0.2f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            animation = androidx.compose.animation.core.tween(700),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        animationSpec = infiniteRepeatable(
+            animation = tween(700),
+            repeatMode = RepeatMode.Reverse
         ),
         label = "recAlpha"
     )
