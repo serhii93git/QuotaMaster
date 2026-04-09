@@ -151,6 +151,9 @@ class HomeViewModel(
             order.forEachIndexed { index, id ->
                 activityRepo.updateSortOrder(id, index)
             }
+            // Small delay to let DB flow emit updated order
+            // before dropping manual override
+            kotlinx.coroutines.delay(150)
             _manualOrder.value = null
         }
     }
