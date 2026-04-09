@@ -243,6 +243,22 @@ fun ActivityDetailScreen(
                 }
             }
 
+            // ── Bar chart ────────────────────────────────────────────
+            if (state.chartData.isNotEmpty() && state.goalHours > 0f) {
+                item {
+                    BarChart(
+                        title = chartTitle,
+                        entries = state.chartData.map { (date, hours) ->
+                            BarChartEntry(
+                                label = date.substring(5), // "MM-DD"
+                                value = hours
+                            )
+                        },
+                        accentColor = accentColor
+                    )
+                }
+            }
+
             // ── Week calendar ────────────────────────────────────────
             item { WeekCalendar(activeDates = state.activeDates, accentColor = accentColor) }
 
