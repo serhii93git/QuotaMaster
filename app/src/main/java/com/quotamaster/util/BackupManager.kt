@@ -6,6 +6,7 @@ import androidx.core.content.FileProvider
 import com.quotamaster.data.db.AppDatabase
 import com.quotamaster.data.model.Activity
 import com.quotamaster.data.model.WorkSession
+import androidx.room.withTransaction
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -93,32 +94,23 @@ class BackupManager(private val context: Context) {
         val activities = jsonToActivities(json.getJSONArray("activities"))
         val sessions = jsonToSessions(json.getJSONArray("sessions"))
 
-        db.runInTransaction {
-            // Room's runInTransaction expects non-suspend lambdas,
-            // but DAO suspend functions use the same transaction coroutine context.
-            // We use a blocking approach via a helper.
-        }
+        db.withTransaction {
+            // Clear existing data — sessions first (FK constraint)
+            sessionDao.deleteAll()
+            activityDao.deleteAll()
 
-        // Use withTransaction for suspend DAO calls
-        importData(activities, sessions)
+            // Insert all activities
+            activities.forEach { activity ->
+                activityDao.insert(activity)
+            }
+
+            // Insert all sessions
+            sessions.forEach { session ->
+                sessionDao.insert(session)
+            }
+        }
 
         return Pair(activities.size, sessions.size)
-    }
-
-    private suspend fun importData(activities: List<Activity>, sessions: List<WorkSession>) {
-        // Clear existing data — sessions first (FK constraint)
-        sessionDao.deleteAll()
-        activityDao.deleteAll()
-
-        // Insert all activities
-        activities.forEach { activity ->
-            activityDao.insert(activity)
-        }
-
-        // Insert all sessions
-        sessions.forEach { session ->
-            sessionDao.insert(session)
-        }
     }
 
     // ── Serialization helpers ────────────────────────────────────────
