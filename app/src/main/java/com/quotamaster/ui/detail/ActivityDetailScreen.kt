@@ -120,6 +120,7 @@ fun ActivityDetailScreen(
     val arrowLabel     = stringResource(R.string.label_arrow)
     val emptyTitle     = stringResource(R.string.detail_empty_title)
     val emptySubtitle  = stringResource(R.string.detail_empty_subtitle)
+    val chartTitle     = stringResource(R.string.chart_hours_per_day)
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
