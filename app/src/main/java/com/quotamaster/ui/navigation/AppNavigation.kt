@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import com.quotamaster.di.AppContainer
 import com.quotamaster.ui.detail.ActivityDetailScreen
 import com.quotamaster.ui.edit.CreateEditActivityScreen
@@ -33,7 +35,14 @@ fun AppNavigation(container: AppContainer) {
 
     val homeViewModel: HomeViewModel = viewModel(factory = container.homeViewModelFactory)
 
-    NavHost(navController = nav, startDestination = Routes.HOME) {
+    NavHost(
+        navController = nav,
+        startDestination = Routes.HOME,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
+    ) {
 
         composable(Routes.HOME) {
             HomeScreen(
