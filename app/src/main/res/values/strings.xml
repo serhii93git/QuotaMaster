@@ -153,4 +153,8 @@
     <string name="settings_import_confirm_title">Replace all data?</string>
     <string name="settings_import_confirm_message">This will delete all current activities and sessions and replace them with the backup. This cannot be undone.</string>
     <string name="settings_import_confirm_yes">Replace</string>
+    
+    <!-- Chart -->
+    <string name="chart_hours_per_day">Hours per day</string>
+
 </resources>
