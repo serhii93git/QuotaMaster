@@ -3,15 +3,11 @@
 package com.quotamaster.ui.home
 
 import android.content.Intent
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,8 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -66,13 +62,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import com.quotamaster.R
 import com.quotamaster.data.model.Activity
 import com.quotamaster.ui.util.IconMapper
@@ -83,6 +77,8 @@ import com.quotamaster.viewmodel.HomeViewModel
 import com.quotamaster.viewmodel.QuickLogAction
 import com.quotamaster.viewmodel.SortMode
 import kotlinx.coroutines.launch
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun HomeScreen(
@@ -95,6 +91,7 @@ fun HomeScreen(
     val quickLog by viewModel.quickLogState.collectAsState()
     val sortMode by viewModel.sortMode.collectAsState()
     val context = LocalContext.current
+    val view = LocalView.current
 
     val appTitle       = stringResource(R.string.app_name)
     val createText     = stringResource(R.string.btn_create_activity)
@@ -116,8 +113,6 @@ fun HomeScreen(
     val conflictYes    = stringResource(R.string.quick_log_conflict_yes)
     val conflictNo     = stringResource(R.string.btn_cancel)
     val sortDesc       = stringResource(R.string.content_desc_sort)
-    val sortManualLbl  = stringResource(R.string.sort_manual)
-    val sortStatusLbl  = stringResource(R.string.sort_by_status)
     val moreDesc       = stringResource(R.string.content_desc_more)
     val menuArchive    = stringResource(R.string.menu_archive)
     val menuDelete     = stringResource(R.string.menu_delete)
@@ -132,7 +127,6 @@ fun HomeScreen(
     val archivedMsg    = stringResource(R.string.archive_done)
     val undoLabel      = stringResource(R.string.undo)
 
-
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -140,12 +134,10 @@ fun HomeScreen(
     var deleteActivity by remember { mutableStateOf<Activity?>(null) }
 
     val lazyListState = rememberLazyListState()
-    val dragDropState = rememberDragDropState(
-        lazyListState = lazyListState,
-        itemCount     = cards.size,
-        onMove        = { from, to -> viewModel.moveItem(from, to) },
-        onDragEnd     = { viewModel.onDragEnd() }
-    )
+    val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        viewModel.moveItem(from.index, to.index)
+        view.performHapticFeedback(HapticFeedbackConstants.SEGMENT_FREQUENT_TICK)
+    }
 
     Scaffold(
         topBar = {
@@ -204,65 +196,72 @@ fun HomeScreen(
                 contentPadding      = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                itemsIndexed(cards, key = { _, card -> card.activity.id }) { index, card ->
-                    val isDragged = dragDropState.draggedIndex == index
-                    ActivityCard(
-                        card           = card,
-                        hoursLabel     = hoursLabel,
-                        daysLabel      = daysLabel,
-                        weeksLabel     = weeksLabel,
-                        monthsLabel    = monthsLabel,
-                        daysLeftLabel  = daysLeftLabel,
-                        recSince       = recSince,
-                        statusOnTrack  = statusOnTrack,
-                        statusBehind   = statusBehind,
-                        statusComplete = statusComplete,
-                        moreDesc       = moreDesc,
-                        menuArchive    = menuArchive,
-                        menuDelete     = menuDelete,
-                        dragDesc       = dragDesc,
-                        showDragHandle = sortMode == SortMode.MANUAL,
-                        isDragged      = isDragged,
-                        dragOffset     = if (isDragged) dragDropState.dragOffset else 0f,
-                        onDragStart    = { dragDropState.onDragStart(index) },
-                        onDrag         = { delta -> dragDropState.onDrag(delta) },
-                        onDragEnd      = { dragDropState.onDragFinished() },
-                        onClick        = { onActivityClick(card.activity.id) },
-                        onLongClick    = {
-                            when (viewModel.onQuickLogPress(card.activity)) {
-                                QuickLogAction.STARTED -> scope.launch {
-                                    snackbarHostState.showSnackbar(recStarted, duration = SnackbarDuration.Short)
-                                }
-                                QuickLogAction.STOPPED -> scope.launch {
-                                    snackbarHostState.showSnackbar(recStopped, duration = SnackbarDuration.Short)
-                                }
-                                QuickLogAction.CONFLICT -> { conflictActivity = card.activity }
-                                QuickLogAction.INSTANT_LOGGED -> scope.launch {
-                                    snackbarHostState.showSnackbar(instantLogged, duration = SnackbarDuration.Short)
-                                }
-                            }
-                        },
-                        onArchive      = {
-                            viewModel.archiveActivity(card.activity.id) { name ->
-                                scope.launch {
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = archivedMsg.format(name),
-                                        actionLabel = undoLabel,
-                                        duration = SnackbarDuration.Short
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        viewModel.unarchiveActivity(card.activity.id)
+                items(cards, key = { it.activity.id }) { card ->
+                    ReorderableItem(reorderableState, key = card.activity.id) { isDragging ->
+                        val elevation by animateDpAsState(
+                            if (isDragging) 8.dp else 2.dp,
+                            label = "dragElevation"
+                        )
+                        ActivityCard(
+                            card           = card,
+                            hoursLabel     = hoursLabel,
+                            daysLabel      = daysLabel,
+                            weeksLabel     = weeksLabel,
+                            monthsLabel    = monthsLabel,
+                            daysLeftLabel  = daysLeftLabel,
+                            recSince       = recSince,
+                            statusOnTrack  = statusOnTrack,
+                            statusBehind   = statusBehind,
+                            statusComplete = statusComplete,
+                            moreDesc       = moreDesc,
+                            menuArchive    = menuArchive,
+                            menuDelete     = menuDelete,
+                            dragDesc       = dragDesc,
+                            showDragHandle = sortMode == SortMode.MANUAL,
+                            elevation      = elevation,
+                            dragHandleModifier = if (sortMode == SortMode.MANUAL) {
+                                Modifier.draggableHandle(
+                                    onDragStarted = {
+                                        view.performHapticFeedback(HapticFeedbackConstants.DRAG_START)
+                                    },
+                                    onDragStopped = {
+                                        viewModel.onDragEnd()
+                                    }
+                                )
+                            } else Modifier,
+                            onClick        = { onActivityClick(card.activity.id) },
+                            onLongClick    = {
+                                when (viewModel.onQuickLogPress(card.activity)) {
+                                    QuickLogAction.STARTED -> scope.launch {
+                                        snackbarHostState.showSnackbar(recStarted, duration = SnackbarDuration.Short)
+                                    }
+                                    QuickLogAction.STOPPED -> scope.launch {
+                                        snackbarHostState.showSnackbar(recStopped, duration = SnackbarDuration.Short)
+                                    }
+                                    QuickLogAction.CONFLICT -> { conflictActivity = card.activity }
+                                    QuickLogAction.INSTANT_LOGGED -> scope.launch {
+                                        snackbarHostState.showSnackbar(instantLogged, duration = SnackbarDuration.Short)
                                     }
                                 }
-                            }
-                        },
-                        onDelete       = { deleteActivity = card.activity },
-                        modifier       = Modifier
-                            .animateItemPlacement()
-                            .then(
-                                if (isDragged) Modifier.zIndex(1f) else Modifier
-                            )
-                    )
+                            },
+                            onArchive      = {
+                                viewModel.archiveActivity(card.activity.id) { name ->
+                                    scope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = archivedMsg.format(name),
+                                            actionLabel = undoLabel,
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.unarchiveActivity(card.activity.id)
+                                        }
+                                    }
+                                }
+                            },
+                            onDelete       = { deleteActivity = card.activity },
+                            modifier       = Modifier.animateItemPlacement()
+                        )
+                    }
                 }
                 item { Spacer(Modifier.height(72.dp)) }
             }
@@ -327,11 +326,8 @@ private fun ActivityCard(
     menuDelete: String,
     dragDesc: String,
     showDragHandle: Boolean,
-    isDragged: Boolean,
-    dragOffset: Float,
-    onDragStart: () -> Unit,
-    onDrag: (Float) -> Unit,
-    onDragEnd: () -> Unit,
+    elevation: androidx.compose.ui.unit.Dp,
+    dragHandleModifier: Modifier,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onArchive: () -> Unit,
@@ -362,14 +358,11 @@ private fun ActivityCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .graphicsLayer { translationY = dragOffset }
             .combinedClickable(
                 onClick     = onClick,
                 onLongClick = onLongClick
             ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isDragged) 8.dp else 2.dp
-        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -386,22 +379,12 @@ private fun ActivityCard(
                         modifier           = Modifier
                             .size(28.dp)
                             .padding(2.dp)
-                            .pointerInput(Unit) {
-                                detectDragGestures(
-                                    onDragStart = { onDragStart() },
-                                    onDrag      = { change, amount ->
-                                        change.consume()
-                                        onDrag(amount.y)
-                                    },
-                                    onDragEnd   = onDragEnd,
-                                    onDragCancel = onDragEnd
-                                )
-                            }
+                            .then(dragHandleModifier)
                     )
                     Spacer(Modifier.width(8.dp))
                 }
                 Box(
-                    modifier         = Modifier
+                    modifier       = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
                         .background(accentColor.copy(alpha = 0.15f)),
@@ -462,80 +445,62 @@ private fun ActivityCard(
             Spacer(Modifier.height(12.dp))
 
             // ── Progress bars ────────────────────────────────────────
-            if (card.goalHours > 0f) {
-                ProgressRow(
-                    text     = "%.1f / %.0f %s".format(card.currentHours, card.goalHours, hoursLabel),
-                    fraction = card.hoursFraction,
-                    color    = accentColor
-                )
-                Spacer(Modifier.height(6.dp))
+            val progressItems = buildList {
+                if (card.goalHours > 0f)  add(Triple(hoursLabel,  "%.1f/%.0f".format(card.currentHours, card.goalHours), card.hoursFraction))
+                if (card.goalDays > 0)    add(Triple(daysLabel,   "%d/%d".format(card.currentDays, card.goalDays), card.daysFraction))
+                if (card.goalWeeks > 0)   add(Triple(weeksLabel,  "%d/%d".format(card.currentWeeks, card.goalWeeks), card.weeksFraction))
+                if (card.goalMonths > 0)  add(Triple(monthsLabel, "%d/%d".format(card.currentMonths, card.goalMonths), card.monthsFraction))
             }
-            if (card.goalDays > 0) {
-                ProgressRow(
-                    text     = "%d / %d %s".format(card.currentDays, card.goalDays, daysLabel),
-                    fraction = card.daysFraction,
-                    color    = accentColor
-                )
-                Spacer(Modifier.height(6.dp))
-            }
-            if (card.goalWeeks > 0) {
-                ProgressRow(
-                    text     = "%d / %d %s".format(card.currentWeeks, card.goalWeeks, weeksLabel),
-                    fraction = card.weeksFraction,
-                    color    = accentColor
-                )
-                Spacer(Modifier.height(6.dp))
-            }
-            if (card.goalMonths > 0) {
-                ProgressRow(
-                    text     = "%d / %d %s".format(card.currentMonths, card.goalMonths, monthsLabel),
-                    fraction = card.monthsFraction,
-                    color    = accentColor
-                )
+
+            progressItems.forEach { (label, valueText, fraction) ->
+                Row(
+                    modifier          = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text     = label,
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(40.dp)
+                    )
+                    LinearProgressIndicator(
+                        progress  = { fraction.coerceIn(0f, 1f) },
+                        modifier  = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color     = accentColor,
+                        trackColor = accentColor.copy(alpha = 0.15f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text  = valueText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
             }
         }
     }
 }
 
 @Composable
-private fun ProgressRow(text: String, fraction: Float, color: Color) {
-    Row(
-        modifier          = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text     = text,
-            style    = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.width(110.dp)
-        )
-        LinearProgressIndicator(
-            progress   = { fraction },
-            modifier   = Modifier
-                .weight(1f)
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            color      = color,
-            trackColor = color.copy(alpha = 0.15f)
-        )
-    }
-}
-
-@Composable
 private fun RecordingIndicator() {
-    val infiniteTransition = rememberInfiniteTransition(label = "rec_pulse")
+    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "rec")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue  = 0.3f,
-        animationSpec = infiniteRepeatable(
-            animation  = tween(800),
-            repeatMode = RepeatMode.Reverse
+        targetValue  = 0.2f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(700),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
         ),
-        label = "rec_alpha"
+        label = "recAlpha"
     )
     Box(
         modifier = Modifier
             .size(10.dp)
             .clip(CircleShape)
-            .background(Color.Red.copy(alpha = alpha))
+            .background(MaterialTheme.colorScheme.error.copy(alpha = alpha))
     )
 }
