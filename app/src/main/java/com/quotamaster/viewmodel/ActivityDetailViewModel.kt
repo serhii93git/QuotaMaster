@@ -50,7 +50,8 @@ data class ActivityDetailState(
     val activeDates: List<String> = emptyList(),
     val sessions: List<WorkSession> = emptyList(),
     val streak: Int = 0,
-    val averageMinutesPerSession: Int = 0
+    val averageMinutesPerSession: Int = 0,
+    val chartData: List<Pair<String, Float>> = emptyList()
 )
 
 // ── ViewModel ────────────────────────────────────────────────────────────────
@@ -104,8 +105,20 @@ class ActivityDetailViewModel(
                 }
 
                 val sessionsWithTime = sessions.filter { it.durationMinutes > 0 }
-                val avg = if (sessionsWithTime.isNotEmpty())
+               val avg = if (sessionsWithTime.isNotEmpty())
                     sessionsWithTime.sumOf { it.durationMinutes } / sessionsWithTime.size else 0
+
+                // Chart: hours per date, sorted chronologically
+                val chartData = sessions
+                    .groupBy { it.date }
+                    .map { (date, daySessions) ->
+                        val dayHours = TimeCalculator.minutesToHours(
+                            daySessions.sumOf { it.durationMinutes }
+                        )
+                        date to dayHours
+                    }
+                    .sortedBy { it.first }
+                    .takeLast(14) // Max 14 bars for readability
 
                 ActivityDetailState(
                     activity      = activity,
@@ -131,7 +144,8 @@ class ActivityDetailViewModel(
                     activeDates   = activeDates,
                     sessions      = sessions,
                     streak        = calculateStreak(activeDates),
-                    averageMinutesPerSession = avg
+                    averageMinutesPerSession = avg,
+                    chartData     = chartData
                 )
             }
         }
