@@ -306,12 +306,18 @@ class HomeViewModel(
         viewModelScope.launch { activityRepo.delete(activity) }
     }
 
-    fun confirmArchive(id: Long) {
-        viewModelScope.launch { activityRepo.archive(id) }
+    fun archiveActivity(id: Long, onDone: (String) -> Unit) {
+        val name = displayCards.value
+            .firstOrNull { it.activity.id == id }
+            ?.activity?.name ?: ""
+        viewModelScope.launch {
+            activityRepo.archive(id)
+            onDone(name)
+        }
     }
 
-    fun archiveActivity(id: Long) {
-        viewModelScope.launch { activityRepo.archive(id) }
+    fun unarchiveActivity(id: Long) {
+        viewModelScope.launch { activityRepo.unarchive(id) }
     }
 
     // ── Factory ──────────────────────────────────────────────────────────
