@@ -31,4 +31,8 @@ class ActivityRepository(private val dao: ActivityDao) {
 
     suspend fun archive(id: Long) =
         dao.archive(id)
-}
+        
+    suspend fun getActivityByIdOnce(id: Long): Activity? =
+        dao.getActivityByIdOnce(id)
+
+    }
