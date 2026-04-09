@@ -142,6 +142,7 @@ fun HomeScreen(
     val lazyListState = rememberLazyListState()
     val dragDropState = rememberDragDropState(
         lazyListState = lazyListState,
+        itemCount     = cards.size,
         onMove        = { from, to -> viewModel.moveItem(from, to) },
         onDragEnd     = { viewModel.onDragEnd() }
     )

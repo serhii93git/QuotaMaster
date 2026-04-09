@@ -22,14 +22,17 @@ class DragDropState(
         private set
     var dragOffset by mutableFloatStateOf(0f)
         private set
+    var itemCount: Int = 0
     val isDragging: Boolean get() = draggedIndex >= 0
 
     fun onDragStart(index: Int) {
+        if (index < 0 || index >= itemCount) return
         draggedIndex = index
         dragOffset = 0f
     }
 
     fun onDrag(delta: Float) {
+        if (!isDragging) return
         dragOffset += delta
         checkSwap()
     }
@@ -43,6 +46,7 @@ class DragDropState(
     }
 
     fun onAutoScrolled(scrolled: Float) {
+        if (!isDragging) return
         dragOffset += scrolled
         checkSwap()
     }
@@ -53,20 +57,28 @@ class DragDropState(
         val current = items.firstOrNull { it.index == draggedIndex } ?: return
         val currentCenter = current.offset + current.size / 2 + dragOffset.toInt()
 
-        items.firstOrNull { it.index == draggedIndex + 1 }?.let { next ->
-            if (currentCenter > next.offset + next.size / 2) {
-                onMoveCallback(draggedIndex, draggedIndex + 1)
-                dragOffset -= next.size
-                draggedIndex++
-                return
+        // Try swap down — only if next index is within card bounds
+        val nextIndex = draggedIndex + 1
+        if (nextIndex < itemCount) {
+            items.firstOrNull { it.index == nextIndex }?.let { next ->
+                if (currentCenter > next.offset + next.size / 2) {
+                    onMoveCallback(draggedIndex, nextIndex)
+                    dragOffset -= next.size
+                    draggedIndex = nextIndex
+                    return
+                }
             }
         }
 
-        items.firstOrNull { it.index == draggedIndex - 1 }?.let { prev ->
-            if (currentCenter < prev.offset + prev.size / 2) {
-                onMoveCallback(draggedIndex, draggedIndex - 1)
-                dragOffset += prev.size
-                draggedIndex--
+        // Try swap up — only if prev index is valid
+        val prevIndex = draggedIndex - 1
+        if (prevIndex >= 0) {
+            items.firstOrNull { it.index == prevIndex }?.let { prev ->
+                if (currentCenter < prev.offset + prev.size / 2) {
+                    onMoveCallback(draggedIndex, prevIndex)
+                    dragOffset += prev.size
+                    draggedIndex = prevIndex
+                }
             }
         }
     }
@@ -81,14 +93,14 @@ class DragDropState(
         val itemBottom = itemTop + item.size
         val viewStart = layoutInfo.viewportStartOffset.toFloat()
         val viewEnd = layoutInfo.viewportEndOffset.toFloat()
-        val threshold = (viewEnd - viewStart) * 0.12f
+        val threshold = (viewEnd - viewStart) * 0.15f
 
         return when {
             itemTop < viewStart + threshold -> {
-                -(viewStart + threshold - itemTop).coerceAtMost(20f)
+                -(viewStart + threshold - itemTop).coerceAtMost(15f)
             }
             itemBottom > viewEnd - threshold -> {
-                (itemBottom - (viewEnd - threshold)).coerceAtMost(20f)
+                (itemBottom - (viewEnd - threshold)).coerceAtMost(15f)
             }
             else -> 0f
         }
@@ -98,6 +110,7 @@ class DragDropState(
 @Composable
 fun rememberDragDropState(
     lazyListState: LazyListState,
+    itemCount: Int,
     onMove: (Int, Int) -> Unit,
     onDragEnd: () -> Unit
 ): DragDropState {
@@ -106,6 +119,7 @@ fun rememberDragDropState(
     }
     state.onMoveCallback = onMove
     state.onDragEndCallback = onDragEnd
+    state.itemCount = itemCount
 
     LaunchedEffect(Unit) {
         snapshotFlow { state.isDragging }
