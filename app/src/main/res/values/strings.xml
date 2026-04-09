@@ -157,4 +157,6 @@
     <!-- Chart -->
     <string name="chart_hours_per_day">Hours per day</string>
 
+    <!-- Archive -->
+    <string name="archive_done">"%1$s" archived</string>
 </resources>
