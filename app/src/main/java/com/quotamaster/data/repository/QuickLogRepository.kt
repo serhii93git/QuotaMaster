@@ -42,7 +42,7 @@ class QuickLogRepository(private val context: Context) {
             date         = date,
             startTime    = startTime
         )
-        NotificationHelper.showRecording(context, activityName)
+        NotificationHelper.showRecording(context, activityName, date, startTime)
     }
 
     fun stop(): QuickLogState {
@@ -56,13 +56,16 @@ class QuickLogRepository(private val context: Context) {
     private fun load(): QuickLogState {
         val activityId = prefs.getLong(KEY_ACTIVITY_ID, -1L)
         if (activityId == -1L) return QuickLogState()
-        return QuickLogState(
+        val state = QuickLogState(
             isRecording  = true,
             activityId   = activityId,
             activityName = prefs.getString(KEY_ACTIVITY_NAME, "") ?: "",
             date         = prefs.getString(KEY_DATE, "") ?: "",
             startTime    = prefs.getString(KEY_START_TIME, "") ?: ""
         )
+        // Restore notification on app restart
+        NotificationHelper.showRecording(context, state.activityName, state.date, state.startTime)
+        return state
     }
 
     companion object {
