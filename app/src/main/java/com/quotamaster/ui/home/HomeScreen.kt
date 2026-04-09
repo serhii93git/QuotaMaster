@@ -384,7 +384,8 @@ private fun ActivityCard(
                         contentDescription = dragDesc,
                         tint               = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier           = Modifier
-                            .size(24.dp)
+                            .size(28.dp)
+                            .padding(2.dp)
                             .pointerInput(Unit) {
                                 detectDragGestures(
                                     onDragStart = { onDragStart() },

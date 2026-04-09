@@ -1,39 +1,55 @@
 package com.quotamaster.ui.home
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class DragDropState(
     val lazyListState: LazyListState,
     internal var onMoveCallback: (Int, Int) -> Unit,
-    internal var onDragEndCallback: () -> Unit
+    internal var onDragEndCallback: () -> Unit,
+    private val scope: CoroutineScope
 ) {
     var draggedIndex by mutableIntStateOf(-1)
         private set
-    var dragOffset by mutableFloatStateOf(0f)
-        private set
+
+    /** Animated offset — drives visual position of dragged card. */
+    val dragOffsetAnimatable = Animatable(0f)
+    val dragOffset: Float get() = dragOffsetAnimatable.value
+
     var itemCount: Int = 0
     val isDragging: Boolean get() = draggedIndex >= 0
+
+    /** Minimum drag distance before a swap is considered (prevents jitter). */
+    private val swapDeadZone = 8f
+
+    /** Last swap direction to add hysteresis. */
+    private var lastSwapDirection = 0 // -1 = up, 1 = down, 0 = none
 
     fun onDragStart(index: Int) {
         if (index < 0 || index >= itemCount) return
         draggedIndex = index
-        dragOffset = 0f
+        lastSwapDirection = 0
+        scope.launch { dragOffsetAnimatable.snapTo(0f) }
     }
 
     fun onDrag(delta: Float) {
         if (!isDragging) return
-        dragOffset += delta
+        scope.launch { dragOffsetAnimatable.snapTo(dragOffset + delta) }
         checkSwap()
     }
 
@@ -41,43 +57,63 @@ class DragDropState(
         if (isDragging) {
             onDragEndCallback()
         }
+        val wasDragging = isDragging
         draggedIndex = -1
-        dragOffset = 0f
+        lastSwapDirection = 0
+
+        if (wasDragging) {
+            // Animate snap-back to 0
+            scope.launch {
+                dragOffsetAnimatable.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                )
+            }
+        }
     }
 
     fun onAutoScrolled(scrolled: Float) {
         if (!isDragging) return
-        dragOffset += scrolled
+        scope.launch { dragOffsetAnimatable.snapTo(dragOffset + scrolled) }
         checkSwap()
     }
 
     private fun checkSwap() {
         if (!isDragging) return
+        if (kotlin.math.abs(dragOffset) < swapDeadZone) return
+
         val items = lazyListState.layoutInfo.visibleItemsInfo
         val current = items.firstOrNull { it.index == draggedIndex } ?: return
         val currentCenter = current.offset + current.size / 2 + dragOffset.toInt()
 
-        // Try swap down — only if next index is within card bounds
+        // Swap down — require 60% past midpoint (hysteresis)
         val nextIndex = draggedIndex + 1
-        if (nextIndex < itemCount) {
+        if (nextIndex < itemCount && lastSwapDirection != -1) {
             items.firstOrNull { it.index == nextIndex }?.let { next ->
-                if (currentCenter > next.offset + next.size / 2) {
+                val nextThreshold = next.offset + (next.size * 0.6f).toInt()
+                if (currentCenter > nextThreshold) {
                     onMoveCallback(draggedIndex, nextIndex)
-                    dragOffset -= next.size
+                    scope.launch { dragOffsetAnimatable.snapTo(dragOffset - next.size) }
                     draggedIndex = nextIndex
+                    lastSwapDirection = 1
                     return
                 }
             }
         }
 
-        // Try swap up — only if prev index is valid
+        // Swap up — require 60% past midpoint
         val prevIndex = draggedIndex - 1
-        if (prevIndex >= 0) {
+        if (prevIndex >= 0 && lastSwapDirection != 1) {
             items.firstOrNull { it.index == prevIndex }?.let { prev ->
-                if (currentCenter < prev.offset + prev.size / 2) {
+                val prevThreshold = prev.offset + (prev.size * 0.4f).toInt()
+                if (currentCenter < prevThreshold) {
                     onMoveCallback(draggedIndex, prevIndex)
-                    dragOffset += prev.size
+                    scope.launch { dragOffsetAnimatable.snapTo(dragOffset + prev.size) }
                     draggedIndex = prevIndex
+                    lastSwapDirection = -1
                 }
             }
         }
@@ -97,10 +133,10 @@ class DragDropState(
 
         return when {
             itemTop < viewStart + threshold -> {
-                -(viewStart + threshold - itemTop).coerceAtMost(15f)
+                -(viewStart + threshold - itemTop).coerceAtMost(12f)
             }
             itemBottom > viewEnd - threshold -> {
-                (itemBottom - (viewEnd - threshold)).coerceAtMost(15f)
+                (itemBottom - (viewEnd - threshold)).coerceAtMost(12f)
             }
             else -> 0f
         }
@@ -114,8 +150,9 @@ fun rememberDragDropState(
     onMove: (Int, Int) -> Unit,
     onDragEnd: () -> Unit
 ): DragDropState {
+    val scope = rememberCoroutineScope()
     val state = remember {
-        DragDropState(lazyListState, onMove, onDragEnd)
+        DragDropState(lazyListState, onMove, onDragEnd, scope)
     }
     state.onMoveCallback = onMove
     state.onDragEndCallback = onDragEnd
