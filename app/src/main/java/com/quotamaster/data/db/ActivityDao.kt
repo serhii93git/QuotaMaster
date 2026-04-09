@@ -43,6 +43,10 @@ interface ActivityDao {
     @Query("SELECT * FROM activities ORDER BY id ASC")
     suspend fun getAllActivitiesOnce(): List<Activity>
 
+    /** One-shot: single activity by ID (for background receivers). */
+    @Query("SELECT * FROM activities WHERE id = :id")
+    suspend fun getActivityByIdOnce(id: Long): Activity?
+
     @Query("DELETE FROM activities")
     suspend fun deleteAll()
 }
