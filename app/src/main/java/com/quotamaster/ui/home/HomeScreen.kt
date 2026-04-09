@@ -51,6 +51,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -128,6 +129,9 @@ fun HomeScreen(
     val exportDesc     = stringResource(R.string.content_desc_export)
     val exportShare    = stringResource(R.string.export_share_title)
     val exportEmpty    = stringResource(R.string.export_empty)
+    val archivedMsg    = stringResource(R.string.archive_done)
+    val undoLabel      = stringResource(R.string.undo)
+
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -237,7 +241,20 @@ fun HomeScreen(
                                 }
                             }
                         },
-                        onArchive      = { viewModel.confirmArchive(card.activity.id) },
+                        onArchive      = {
+                            viewModel.archiveActivity(card.activity.id) { name ->
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = archivedMsg.format(name),
+                                        actionLabel = undoLabel,
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.unarchiveActivity(card.activity.id)
+                                    }
+                                }
+                            }
+                        },
                         onDelete       = { deleteActivity = card.activity },
                         modifier       = Modifier
                             .animateItemPlacement()
