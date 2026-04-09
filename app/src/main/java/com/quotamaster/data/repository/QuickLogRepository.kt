@@ -53,19 +53,31 @@ class QuickLogRepository(private val context: Context) {
         return snapshot
     }
 
+    private var notificationRestored = false
+
     private fun load(): QuickLogState {
         val activityId = prefs.getLong(KEY_ACTIVITY_ID, -1L)
         if (activityId == -1L) return QuickLogState()
-        val state = QuickLogState(
+        return QuickLogState(
             isRecording  = true,
             activityId   = activityId,
             activityName = prefs.getString(KEY_ACTIVITY_NAME, "") ?: "",
             date         = prefs.getString(KEY_DATE, "") ?: "",
             startTime    = prefs.getString(KEY_START_TIME, "") ?: ""
         )
-        // Restore notification on app restart
-        NotificationHelper.showRecording(context, state.activityName, state.date, state.startTime)
-        return state
+    }
+
+    /**
+     * Restores the recording notification if timer was active.
+     * Call once from MainActivity.onCreate() — not from background components.
+     */
+    fun restoreNotificationIfNeeded() {
+        if (notificationRestored) return
+        notificationRestored = true
+        val current = state.value
+        if (current.isRecording) {
+            NotificationHelper.showRecording(context, current.activityName, current.date, current.startTime)
+        }
     }
 
     companion object {

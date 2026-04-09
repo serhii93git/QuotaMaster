@@ -2,6 +2,7 @@ package com.quotamaster.data.repository
 
 import com.quotamaster.data.db.WorkSessionDao
 import com.quotamaster.data.model.Period
+import com.quotamaster.data.db.PeriodStats
 import com.quotamaster.data.model.WorkSession
 import com.quotamaster.util.TimeCalculator
 import kotlinx.coroutines.flow.Flow
@@ -83,4 +84,7 @@ class WorkSessionRepository(private val dao: WorkSessionDao) {
     suspend fun deleteSession(session: WorkSession) = dao.delete(session)
 
     suspend fun getAllSessionsOnce(): List<WorkSession> = dao.getAllSessionsOnce()
+
+    fun getPeriodStats(activityId: Long, tag: String) =
+        dao.getPeriodStats(activityId, tag)
 }

@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -168,62 +169,49 @@ class HomeViewModel(
         val period = Period.entries.firstOrNull { it.key == activity.period } ?: Period.WEEKLY
         val tag = TimeCalculator.getPeriodTag(TimeCalculator.todayString(), period)
 
-        return combine(
-            combine(
-                sessionRepo.getTotalMinutesForActivityPeriod(activity.id, tag),
-                sessionRepo.getUniqueDaysForActivityPeriod(activity.id, tag),
-            ) { a, b -> Pair(a, b) },
-            combine(
-                sessionRepo.getUniqueWeeksForActivityPeriod(activity.id, tag),
-                sessionRepo.getUniqueMonthsForActivityPeriod(activity.id, tag),
-            ) { a, b -> Pair(a, b) }
-        ) { (totalMin, days), (weeks, months) ->
-            val minutes = totalMin ?: 0
-            val uniqueDays = days ?: 0
-            val uniqueWeeks = weeks ?: 0
-            val uniqueMonths = months ?: 0
-            val hours = TimeCalculator.minutesToHours(minutes)
+        return sessionRepo.getPeriodStats(activity.id, tag)
+            .map { stats ->
+                val hours = TimeCalculator.minutesToHours(stats.totalMinutes)
 
-            val goalH = activity.goalHoursPerPeriod
-            val goalD = activity.goalDaysPerPeriod
-            val goalW = activity.goalWeeksPerPeriod
-            val goalM = activity.goalMonthsPerPeriod
+                val goalH = activity.goalHoursPerPeriod
+                val goalD = activity.goalDaysPerPeriod
+                val goalW = activity.goalWeeksPerPeriod
+                val goalM = activity.goalMonthsPerPeriod
 
-            val hFrac = if (goalH > 0f) (hours / goalH).coerceAtMost(1f) else 0f
-            val dFrac = if (goalD > 0) (uniqueDays.toFloat() / goalD).coerceAtMost(1f) else 0f
-            val wFrac = if (goalW > 0) (uniqueWeeks.toFloat() / goalW).coerceAtMost(1f) else 0f
-            val mFrac = if (goalM > 0) (uniqueMonths.toFloat() / goalM).coerceAtMost(1f) else 0f
+                val hFrac = if (goalH > 0f) hours / goalH else 0f
+                val dFrac = if (goalD > 0) stats.uniqueDays.toFloat() / goalD else 0f
+                val wFrac = if (goalW > 0) stats.uniqueWeeks.toFloat() / goalW else 0f
+                val mFrac = if (goalM > 0) stats.uniqueMonths.toFloat() / goalM else 0f
 
-            // Completed = all set goals met; Behind = any set goal < 50%
-            val fractions = listOfNotNull(
-                if (goalH > 0f) hFrac else null,
-                if (goalD > 0) dFrac else null,
-                if (goalW > 0) wFrac else null,
-                if (goalM > 0) mFrac else null,
-            )
-            val status = when {
-                fractions.isEmpty() -> ActivityStatus.ON_TRACK
-                fractions.all { it >= 1f } -> ActivityStatus.COMPLETED
-                fractions.any { it < 0.5f } -> ActivityStatus.BEHIND
-                else -> ActivityStatus.ON_TRACK
+                val fractions = listOfNotNull(
+                    if (goalH > 0f) hFrac else null,
+                    if (goalD > 0) dFrac else null,
+                    if (goalW > 0) wFrac else null,
+                    if (goalM > 0) mFrac else null,
+                )
+                val status = when {
+                    fractions.isEmpty() -> ActivityStatus.ON_TRACK
+                    fractions.all { it >= 1f } -> ActivityStatus.COMPLETED
+                    fractions.any { it < 0.5f } -> ActivityStatus.BEHIND
+                    else -> ActivityStatus.ON_TRACK
+                }
+
+                val daysUntilEnd = activity.endDate?.let {
+                    val end = LocalDate.parse(it, dateFmt)
+                    ChronoUnit.DAYS.between(LocalDate.now(), end).toInt().coerceAtLeast(0)
+                }
+
+                ActivityCardState(
+                    activity = activity,
+                    currentHours = hours, currentDays = stats.uniqueDays,
+                    currentWeeks = stats.uniqueWeeks, currentMonths = stats.uniqueMonths,
+                    goalHours = goalH, goalDays = goalD,
+                    goalWeeks = goalW, goalMonths = goalM,
+                    hoursFraction = hFrac, daysFraction = dFrac,
+                    weeksFraction = wFrac, monthsFraction = mFrac,
+                    status = status, daysUntilEnd = daysUntilEnd
+                )
             }
-
-            val daysUntilEnd = activity.endDate?.let {
-                val end = LocalDate.parse(it, dateFmt)
-                ChronoUnit.DAYS.between(LocalDate.now(), end).toInt().coerceAtLeast(0)
-            }
-
-            ActivityCardState(
-                activity = activity,
-                currentHours = hours, currentDays = uniqueDays,
-                currentWeeks = uniqueWeeks, currentMonths = uniqueMonths,
-                goalHours = goalH, goalDays = goalD,
-                goalWeeks = goalW, goalMonths = goalM,
-                hoursFraction = hFrac, daysFraction = dFrac,
-                weeksFraction = wFrac, monthsFraction = mFrac,
-                status = status, daysUntilEnd = daysUntilEnd
-            )
-        }
     }
 
     // ── Quick-log ────────────────────────────────────────────────────────

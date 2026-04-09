@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermission()
 
         val app = application as QuotaMasterApp
+        app.container.quickLogRepository.restoreNotificationIfNeeded()
 
         setContent {
             val settings by app.container.settingsRepository.settings

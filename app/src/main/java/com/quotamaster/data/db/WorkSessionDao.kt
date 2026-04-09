@@ -8,6 +8,13 @@ import androidx.room.Query
 import com.quotamaster.data.model.WorkSession
 import kotlinx.coroutines.flow.Flow
 
+data class PeriodStats(
+    val totalMinutes: Int = 0,
+    val uniqueDays: Int = 0,
+    val uniqueWeeks: Int = 0,
+    val uniqueMonths: Int = 0
+)
+
 @Dao
 interface WorkSessionDao {
 
@@ -53,5 +60,20 @@ interface WorkSessionDao {
 
     @Query("DELETE FROM work_sessions")
     suspend fun deleteAll()
+
+    /**
+     * Combined stats query — returns all 4 metrics in one DB call.
+     * Replaces 4 separate Flow queries per activity.
+     */
+    @Query("""
+        SELECT 
+            COALESCE(SUM(duration_minutes), 0) AS totalMinutes,
+            COUNT(DISTINCT date) AS uniqueDays,
+            COUNT(DISTINCT (substr(date,1,4) || '-W' || strftime('%W', date))) AS uniqueWeeks,
+            COUNT(DISTINCT substr(date,1,7)) AS uniqueMonths
+        FROM work_sessions 
+        WHERE activity_id = :activityId AND period_tag = :tag
+    """)
+    fun getPeriodStats(activityId: Long, tag: String): Flow<PeriodStats>
 
 }
