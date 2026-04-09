@@ -122,6 +122,7 @@
     <string name="notification_channel_name">Recording</string>
     <string name="notification_channel_desc">Shows when a session is being recorded</string>
     <string name="notification_recording_title">Recording session</string>
+    <string name="notification_stop">Stop</string>
     <string name="notification_channel_reminder">Daily Reminders</string>
     <string name="notification_channel_reminder_desc">Reminds you to log sessions</string>
     <string name="reminder_notification_title">Don\'t forget to log!</string>
