@@ -70,6 +70,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quotamaster.R
 import androidx.compose.foundation.combinedClickable
+import com.quotamaster.ui.common.BarChart
+import com.quotamaster.ui.common.BarChartEntry
 import com.quotamaster.ui.common.SessionLoggerDialog
 import com.quotamaster.ui.theme.RingGoalMet
 import com.quotamaster.ui.theme.RingOverflow
