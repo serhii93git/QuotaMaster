@@ -39,6 +39,9 @@ interface ActivityDao {
     @Query("UPDATE activities SET is_archived = 1 WHERE id = :id")
     suspend fun archive(id: Long)
 
+    @Query("UPDATE activities SET is_archived = 0 WHERE id = :id")
+    suspend fun unarchive(id: Long)
+
     /** One-shot: all activities for backup. */
     @Query("SELECT * FROM activities ORDER BY id ASC")
     suspend fun getAllActivitiesOnce(): List<Activity>
